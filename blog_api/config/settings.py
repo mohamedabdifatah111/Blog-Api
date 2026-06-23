@@ -69,10 +69,12 @@ TEMPLATES = [
 
 WSGI_APPLICATION = "config.wsgi.application"
 
-# ── Database (PostgreSQL on Render) ─────────────────────────────────────────
+# ── Database (PostgreSQL on Supabase/Render) ─────────────────────────────────
+db_url = os.environ.get("DATABASE_URL") or config("DATABASE_URL", default="")
+
 DATABASES = {
-    "default": dj_database_url.config(
-        default=config("DATABASE_URL"),
+    "default": dj_database_url.parse(
+        db_url,
         conn_max_age=600,
         ssl_require=True,
     )
@@ -103,7 +105,8 @@ MEDIA_ROOT = BASE_DIR / "media"
 DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
 
 # ── CORS ─────────────────────────────────────────────────────────────────────
-CORS_ALLOWED_ORIGINS = config("CORS_ALLOWED_ORIGINS", default="").split(",")
+cors_env = config("CORS_ALLOWED_ORIGINS", default="")
+CORS_ALLOWED_ORIGINS = [origin.strip() for origin in cors_env.split(",") if origin.strip()]
 CORS_ALLOW_ALL_ORIGINS = DEBUG   # allow all in dev only
 
 # ── DRF ──────────────────────────────────────────────────────────────────────
