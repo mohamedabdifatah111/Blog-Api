@@ -72,6 +72,13 @@ WSGI_APPLICATION = "config.wsgi.application"
 # ── Database (PostgreSQL on Supabase/Render) ─────────────────────────────────
 db_url = os.environ.get("DATABASE_URL") or config("DATABASE_URL", default="")
 
+# Force python to read straight from Render's cloud environment first, completely bypassing decouple if present
+db_url = os.environ.get("DATABASE_URL")
+
+if not db_url:
+    # Local fallback for your machine
+    db_url = config("DATABASE_URL", default="")
+
 DATABASES = {
     "default": dj_database_url.parse(
         db_url,
