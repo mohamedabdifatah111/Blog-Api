@@ -39,7 +39,7 @@ INSTALLED_APPS = DJANGO_APPS + THIRD_PARTY_APPS + LOCAL_APPS
 
 MIDDLEWARE = [
     "django.middleware.security.SecurityMiddleware",
-    "whitenoise.middleware.WhiteNoiseMiddleware",   # ← serve static files
+    "whitenoise.middleware.WhiteNoiseMiddleware",
     "corsheaders.middleware.CorsMiddleware",
     "django.contrib.sessions.middleware.SessionMiddleware",
     "django.middleware.common.CommonMiddleware",
@@ -69,26 +69,24 @@ TEMPLATES = [
 
 WSGI_APPLICATION = "config.wsgi.application"
 
-# ── Database (PostgreSQL on Supabase/Render) ─────────────────────────────────
-db_url = os.environ.get("DATABASE_URL") or config("DATABASE_URL", default="")
+# ── Database (Supabase PostgreSQL) ───────────────────────────────────────────
+DATABASE_URL = os.environ.get("DATABASE_URL", "")
 
-# Force python to read straight from Render's cloud environment first, completely bypassing decouple if present
-db_url = os.environ.get("DATABASE_URL")
-
-if not db_url:
-    # Local fallback for your machine
-    db_url = config("DATABASE_URL", default="")
+if not DATABASE_URL:
+    raise Exception("DATABASE_URL environment variable is not set!")
 
 DATABASES = {
     "default": dj_database_url.parse(
-        db_url,
+        DATABASE_URL,
         conn_max_age=600,
         ssl_require=True,
     )
 }
 
+# ── Custom User Model ─────────────────────────────────────────────────────────
 AUTH_USER_MODEL = "accounts.User"
 
+# ── Password Validation ───────────────────────────────────────────────────────
 AUTH_PASSWORD_VALIDATORS = [
     {"NAME": "django.contrib.auth.password_validation.UserAttributeSimilarityValidator"},
     {"NAME": "django.contrib.auth.password_validation.MinimumLengthValidator"},
@@ -96,12 +94,13 @@ AUTH_PASSWORD_VALIDATORS = [
     {"NAME": "django.contrib.auth.password_validation.NumericPasswordValidator"},
 ]
 
+# ── Internationalisation ──────────────────────────────────────────────────────
 LANGUAGE_CODE = "en-us"
 TIME_ZONE = "UTC"
 USE_I18N = True
 USE_TZ = True
 
-# ── Static & Media ───────────────────────────────────────────────────────────
+# ── Static & Media ────────────────────────────────────────────────────────────
 STATIC_URL = "/static/"
 STATIC_ROOT = BASE_DIR / "staticfiles"
 STATICFILES_STORAGE = "whitenoise.storage.CompressedManifestStaticFilesStorage"
@@ -111,12 +110,12 @@ MEDIA_ROOT = BASE_DIR / "media"
 
 DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
 
-# ── CORS ─────────────────────────────────────────────────────────────────────
-cors_env = config("CORS_ALLOWED_ORIGINS", default="")
-CORS_ALLOWED_ORIGINS = [origin.strip() for origin in cors_env.split(",") if origin.strip()]
-CORS_ALLOW_ALL_ORIGINS = DEBUG   # allow all in dev only
+# ── CORS ──────────────────────────────────────────────────────────────────────
+_cors = config("CORS_ALLOWED_ORIGINS", default="")
+CORS_ALLOWED_ORIGINS = [origin.strip() for origin in _cors.split(",") if origin.strip()]
+CORS_ALLOW_ALL_ORIGINS = DEBUG  # allow all origins in dev only
 
-# ── DRF ──────────────────────────────────────────────────────────────────────
+# ── Django REST Framework ─────────────────────────────────────────────────────
 REST_FRAMEWORK = {
     "DEFAULT_AUTHENTICATION_CLASSES": (
         "rest_framework_simplejwt.authentication.JWTAuthentication",
@@ -143,7 +142,7 @@ REST_FRAMEWORK = {
     },
 }
 
-# ── SimpleJWT ────────────────────────────────────────────────────────────────
+# ── SimpleJWT ─────────────────────────────────────────────────────────────────
 SIMPLE_JWT = {
     "ACCESS_TOKEN_LIFETIME": timedelta(minutes=60),
     "REFRESH_TOKEN_LIFETIME": timedelta(days=7),
@@ -153,11 +152,15 @@ SIMPLE_JWT = {
     "AUTH_HEADER_TYPES": ("Bearer",),
 }
 
-# ── drf-spectacular ──────────────────────────────────────────────────────────
+# ── drf-spectacular (Swagger / Redoc) ─────────────────────────────────────────
 SPECTACULAR_SETTINGS = {
     "TITLE": "Blog API",
     "DESCRIPTION": "A robust Blog REST API built with Django & DRF.",
     "VERSION": "1.0.0",
     "SERVE_INCLUDE_SCHEMA": False,
     "COMPONENT_SPLIT_REQUEST": True,
+    "SWAGGER_UI_SETTINGS": {
+        "deepLinking": True,
+        "persistAuthorization": True,
+    },
 }
