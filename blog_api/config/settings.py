@@ -9,6 +9,7 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 SECRET_KEY = config("SECRET_KEY")
 DEBUG = config("DEBUG", default=False, cast=bool)
 ALLOWED_HOSTS = config("ALLOWED_HOSTS", default="*").split(",")
+CSRF_TRUSTED_ORIGINS = ["https://blog-api-ojpb.onrender.com"]
 
 DJANGO_APPS = [
     "django.contrib.admin",
@@ -113,7 +114,7 @@ DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
 # ── CORS ──────────────────────────────────────────────────────────────────────
 _cors = config("CORS_ALLOWED_ORIGINS", default="")
 CORS_ALLOWED_ORIGINS = [origin.strip() for origin in _cors.split(",") if origin.strip()]
-CORS_ALLOW_ALL_ORIGINS = DEBUG  # allow all origins in dev only
+CORS_ALLOW_ALL_ORIGINS = not bool(CORS_ALLOWED_ORIGINS)  # allow all only if no origins set
 
 # ── Django REST Framework ─────────────────────────────────────────────────────
 REST_FRAMEWORK = {
